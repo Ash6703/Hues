@@ -1,0 +1,373 @@
+import React, { useState, useEffect } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
+import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const { width } = Dimensions.get("window");
+
+const saveHighScore = async (score) => {
+  try {
+    const currentHighScore = await AsyncStorage.getItem("highScore");
+    if (currentHighScore === null || score > parseInt(currentHighScore)) {
+      await AsyncStorage.setItem("highScore", score.toString());
+    }
+  } catch (error) {
+    console.error("Error saving high score:", error);
+  }
+};
+
+const getHighScore = async () => {
+  try {
+    const highScore = await AsyncStorage.getItem("highScore");
+    return highScore !== null ? parseInt(highScore) : 0;
+  } catch (error) {
+    console.error("Error retrieving high score:", error);
+    return 0;
+  }
+};
+
+const generateColors = (level) => {
+  const baseColor = Math.floor(Math.random() * 16777215);
+  let differentColor = baseColor;
+
+  const adjustment = Math.max(5, 30 - level);
+  const direction = Math.random() < 0.5 ? 1 : -1;
+
+  for (let i = 0; i < 3; i++) {
+    let component = (baseColor >> (8 * i)) & 255;
+    component = Math.max(0, Math.min(255, component + adjustment * direction));
+    differentColor =
+      (differentColor & ~(255 << (8 * i))) | (component << (8 * i));
+  }
+
+  const baseColorHex = `#${baseColor.toString(16).padStart(6, "0")}`;
+  const differentColorHex = `#${differentColor.toString(16).padStart(6, "0")}`;
+
+  const gridSize = Math.min(9, Math.floor((level + 1) / 2) + 1);
+  const totalBoxes = gridSize * gridSize;
+  const differentIndex = Math.floor(Math.random() * totalBoxes);
+
+  return Array(totalBoxes)
+    .fill()
+    .map((_, index) =>
+      index === differentIndex ? differentColorHex : baseColorHex
+    );
+};
+
+export default function App() {
+  const [gameState, setGameState] = useState("start");
+  const [level, setLevel] = useState(1);
+  const [colors, setColors] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [showAns, setShowAns] = useState(false);
+  const [fontsLoaded] = useFonts({
+    "Tiny5-Regular": require("../assets/fonts/Tiny5-Regular.ttf"), // Adjust the path as necessary
+  });
+  // New state variable for high score
+  const [highScore, setHighScore] = useState(0);
+  const [cheatCount,setCheatCount] = useState(1);
+  const [cheat,setCheat] = useState(false);
+
+  useEffect(() => {
+    if (timeLeft > 0 && gameState === "playing") {
+      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (timeLeft === 0) {
+      setGameState("gameover");
+    }
+  }, [timeLeft, gameState]);
+
+  useEffect(() => {
+    if (gameState === "playing") {
+      const newColors = generateColors(level);
+      setColors(newColors);
+      const uniqueColor = newColors.find(
+        (color, i, arr) => arr.indexOf(color) === arr.lastIndexOf(color)
+      );
+      newColors.forEach((color, index) => {
+        if (color === uniqueColor) console.log(index + 1);
+      });
+    }
+  }, [gameState, level]);
+
+  // Load high score when the component mounts (on app start)
+  useEffect(() => {
+    const loadHighScore = async () => {
+      const storedHighScore = await getHighScore();
+      setHighScore(storedHighScore);
+    };
+
+    loadHighScore();
+  }, []);
+
+  const handleBoxPress = (index) => {
+    const uniqueColor = colors.find(
+      (color, i, arr) => arr.indexOf(color) === arr.lastIndexOf(color)
+    );
+    if (colors[index] === uniqueColor) {
+      setLevel((prevLevel) => prevLevel + 1);
+    } else {
+      handleGameOver();
+    }
+  };
+
+  const handleGameOver = async () => {
+    await saveHighScore(level);
+    // Update high score after game over
+    const newHighScore = await getHighScore();
+    setHighScore(newHighScore);
+    setCheat(false);
+    setGameState("gameover");
+  };
+
+  const handleStart = () => {
+    setGameState("playing");
+    setTimeLeft(60);
+    setShowAns(false);
+    setLevel(1);
+    setCheat(false);
+    setCheatCount(1);
+  };
+
+  const handleReveal = () => {
+    setShowAns(!showAns);
+  };
+
+  const handleHome = () => {
+    setGameState("start");
+  };
+
+  const handleCheat = () => {
+    setCheatCount((prevCheat) => prevCheat + 1);
+    if(cheatCount==10) setCheat(true);
+  }
+
+  const renderGame = () => {
+    const gridSize = Math.min(9, Math.floor((level + 1) / 2) + 1);
+    const boxSize = (width - 40) / gridSize;
+    const uniqueColor = colors.find(
+      (color, i, arr) => arr.indexOf(color) === arr.lastIndexOf(color)
+    );
+    return (
+      <View style={styles.gameContainer}>
+        {colors.map((color, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.box,
+              {
+                backgroundColor: color,
+                width: boxSize,
+                height: boxSize,
+              },
+              color === uniqueColor && cheat
+              ? {
+                  borderWidth: 1,
+                  borderColor: "red",
+                }
+              : {},
+            ]}
+            onPress={() => handleBoxPress(index)}
+          />
+        ))}
+      </View>
+    );
+  };
+
+  const renderAnswer = () => {
+    const gridSize = Math.min(9, Math.floor((level + 1) / 2) + 1);
+    const boxSize = (width - 40) / gridSize;
+    const uniqueColor = colors.find(
+      (color, i, arr) => arr.indexOf(color) === arr.lastIndexOf(color)
+    );
+
+    return (
+      <View style={styles.gameContainer}>
+        {colors.map((color, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.box,
+              {
+                backgroundColor: color,
+                width: boxSize,
+                height: boxSize,
+              },
+              color === uniqueColor && showAns ? {
+                borderWidth: 1,
+                borderColor: "red",
+              } : {},
+            ]}
+          />
+        ))}
+      </View>
+    );
+  };
+
+  if (!fontsLoaded) {
+    return null; // or return a loading component
+  }
+
+  return (
+    <View style={styles.container}>
+      {gameState === "start" && (
+        <>
+          <View style={styles.titlebox}>
+            <Text style={styles.titletxt}>HUES</Text>
+            <Text style={styles.subtxt}>TAP THE ODD ONE OUT</Text>
+          </View>
+          <TouchableOpacity style={styles.startButton} onPress={handleStart}>
+            <Text style={styles.startButtonText}>START GAME</Text>
+          </TouchableOpacity>
+          {/* Display high score on the start screen */}
+          <View style={styles.highScoreBox}>
+            <Text style={styles.highScoreText}>High Score: {highScore}</Text>
+          </View>
+          <Text style={styles.credittxt}>-ASHLIN CHIRAKKAL</Text>
+        </>
+      )}
+      {gameState === "playing" && (
+        <>
+          <TouchableOpacity activeOpacity={1} onPress={() => handleCheat()}>
+            <Text style={styles.timeText}>{timeLeft}</Text>
+          </TouchableOpacity>
+          <Text style={styles.levelText}>LEVEL: {level}</Text>
+          {renderGame()}
+        </>
+      )}
+      {gameState === "gameover" && (
+        <>
+          <View style={styles.gameOverBox}>
+            <Text style={styles.gameOverText}>GAME OVER!</Text>
+            <Text style={styles.scoreText}>YOU REACHED LEVEL {level}</Text>
+            {/* Display high score on the game over screen */}
+            <Text style={styles.highScoreText}>High Score: {highScore}</Text>
+            <TouchableOpacity style={styles.resetButton} onPress={handleStart}>
+              <Text style={styles.resetButtonText}>PLAY AGAIN</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.resetButton} onPress={handleReveal}>
+              <Text style={styles.resetButtonText}>SHOW ANSWER</Text>
+            </TouchableOpacity>
+            {renderAnswer()}
+            <TouchableOpacity style={styles.resetButton} onPress={handleHome}>
+              <Text style={styles.resetButtonText}>BACK TO HOME</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#000",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  titlebox: {
+    marginBottom: 50,
+    padding: 15,
+    width: "300",
+    backgroundColor: "#800080",
+    borderRadius: 10,
+  },
+  titletxt: {
+    textAlign: "center",
+    color: "white",
+    fontSize: 100,
+    fontFamily: "Tiny5-Regular",
+  },
+  subtxt: {
+    textAlign: "center",
+    color: "white",
+    fontSize: 30,
+    paddingBottom: 40,
+    fontFamily: "Tiny5-Regular",
+  },
+  startButton: {
+    backgroundColor: "purple",
+    padding: 15,
+    borderRadius: 10,
+  },
+  startButtonText: {
+    fontFamily: "Tiny5-Regular",
+    color: "white",
+    paddingBottom: 10,
+    paddingHorizontal: 20,
+    fontSize: 30,
+  },
+  credittxt: {
+    color: "white",
+    fontFamily: "Tiny5-Regular",
+    position: "absolute",
+    bottom: 20,
+    right: 10,
+    fontSize: 15,
+  },
+  highScoreBox: {
+    marginTop: 30,
+  },
+  gameContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+  box: {
+    margin: 2,
+  },
+  levelText: {
+    fontFamily: "Tiny5-Regular",
+    fontSize: 40,
+    marginBottom: 20,
+    color: "white",
+  },
+  gameOverBox: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  gameOverText: {
+    fontFamily: "Tiny5-Regular",
+    fontSize: 30,
+    marginBottom: 10,
+    color: "white",
+  },
+  scoreText: {
+    fontFamily: "Tiny5-Regular",
+    fontSize: 24,
+    marginBottom: 20,
+    color: "white",
+  },
+  resetButton: {
+    backgroundColor: "purple",
+    borderRadius: 5,
+    margin: 10,
+  },
+  resetButtonText: {
+    fontFamily: "Tiny5-Regular",
+    color: "white",
+    fontSize: 18,
+    paddingHorizontal: 10,
+    paddingBottom: 8,
+    textAlign: "center",
+  },
+  timeText: {
+    fontFamily: "Tiny5-Regular",
+    fontSize: 40,
+    marginBottom: 10,
+    color: "white",
+  },
+  highScoreText: {
+    fontFamily: "Tiny5-Regular",
+    fontSize: 30,
+    marginBottom: 10,
+    color: "white",
+  },
+});
