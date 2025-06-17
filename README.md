@@ -1,50 +1,62 @@
-# Welcome to your Expo app 👋
+# 🎨 Hues – A Color Perception Game
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Hues is a fast, fun, and minimalistic mobile game built with Expo that challenges your ability to distinguish between subtly different color hues. Perfect for testing your visual perception and reaction time!
 
-## Get started
+## 🚀 How to Get Started
 
 1. Install dependencies
 
-   ```bash
    npm install
-   ```
 
 2. Start the app
 
-   ```bash
-    npx expo start
-   ```
+   npx expo start
 
-In the output, you'll find options to open the app in a
+This will launch the Expo developer tools in your browser, where you can run the app on:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Android emulator
+- iOS simulator
+- Web browser
+- Expo Go app on your mobile device
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🎮 About the Game
 
-## Get a fresh project
+In Hues, your goal is simple:
 
-When you're ready, run:
+> Tap the tile that has a slightly different hue than the others before time runs out.
 
-```bash
-npm run reset-project
-```
+- The game gets progressively harder with each level.
+- Perfect for players who love color challenges, visual games, or want to test their eyes.
+- Designed to be minimal, beautiful, and fast.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🧠 Technologies Used
 
-## Learn more
+- React Native
+- Expo
+- File-based routing with expo-router
+- Optimized for mobile gameplay
 
-To learn more about developing your project with Expo, look at the following resources:
+## 🛠 Development
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+You can begin editing the game by modifying files inside the `app/` directory.
 
-## Join the community
+To reset the starter template and start clean:
 
-Join our community of developers creating universal apps.
+   npm run reset-project
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+This will move any starter example code to an `app-example/` directory and give you a fresh start in `app/`.
+
+## 📚 Learn More
+
+- Expo Documentation: https://docs.expo.dev/
+- React Native Docs: https://reactnative.dev/
+- expo-router Docs: https://expo.github.io/router/docs
+
+## 👥 Join the Community
+
+- Expo Discord: https://chat.expo.dev
+- Expo GitHub: https://github.com/expo/expo
+
+---
+
+Enjoy testing your perception with Hues! 🎨🧠✨
